@@ -1,30 +1,30 @@
 import streamlit as st
-import openai
 import time
 import os
+import google.generativeai as genai
+from dotenv import load_dotenv
 
-# Load OpenAI API key securely from environment variable
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# ✅ Load environment variables from .env file
+load_dotenv()
 
-# Function to call the OpenAI API
-def generate_content(prompt, temperature=0.7, max_tokens=600):
+# ✅ Configure Gemini API with the loaded key
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+def generate_content(prompt, temperature=0.7):
+    import time
     start_time = time.time()
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
+        model = genai.GenerativeModel('gemini-1.5-flash')  # or 'gemini-1.5-pro'
+        response = model.generate_content(prompt, generation_config={"temperature": temperature})
         end_time = time.time()
-        usage = response['usage']
         return {
-            'output': response.choices[0].message['content'],
-            'token_usage': usage,
-            'generation_time': round(end_time - start_time, 2)
+            'output': response.text,
+            'generation_time': round(end_time - start_time, 2),
+            'token_usage': "Not Available in Gemini response"  # Gemini doesn't return token stats yet
         }
     except Exception as e:
         return {'error': str(e)}
+
 
 # Prompt templates specifically for Software Development Education
 def get_prompt_template(template_type, topic, learner_level, context):
@@ -68,13 +68,10 @@ if generate_btn:
         st.subheader("📄 Generated Output")
         st.text_area("Output:", result['output'], height=300)
 
-        st.markdown("### 📊 Performance Metrics")
-        st.json({
-            "Generation Time (s)": result['generation_time'],
-            "Prompt Tokens": result['token_usage']['prompt_tokens'],
-            "Completion Tokens": result['token_usage']['completion_tokens'],
-            "Total Tokens": result['token_usage']['total_tokens']
-        })
+        st.markdown("### ⏱️ Performance")
+        st.write(f"Generation Time: {result['generation_time']} seconds")
+
+        
 
         st.download_button("📥 Download Output", result['output'], file_name=f"{template_type}_{topic}.txt")
 

@@ -24,6 +24,8 @@ def generate_content(prompt, temperature=0.7):
         }
     except Exception as e:
         return {'error': str(e)}
+    
+    
 
 
 # Prompt templates specifically for Software Development Education
@@ -32,7 +34,7 @@ def get_prompt_template(template_type, topic, learner_level, context):
         return f"Create a comprehensive 1-hour lesson plan on '{topic}' for {learner_level} youth learning software development. Include learning objectives, materials needed, and step-by-step teaching activities. Context: {context}"
     elif template_type == "Study Guide":
         return f"Generate a study guide summarizing the key points of '{topic}' for {learner_level} students studying software development. Include bullet points and 5 quiz questions. Context: {context}"
-    elif template_type == "Group Activity":
+    elif template_type == "Tutorials":
         return f"Design a group-based hands-on activity to teach the topic '{topic}' to {learner_level} learners. Ensure it's engaging and collaborative. Context: {context}"
     elif template_type == "Quiz Answer Sheet":
         return f"Provide an answer sheet for a 5-question quiz on the topic '{topic}' in software development. Context: {context}"
@@ -42,34 +44,34 @@ def get_prompt_template(template_type, topic, learner_level, context):
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Software Dev Content Generator", layout="centered")
-st.title("💻 Custom Content Generator for Youth in Software Development")
+st.title("💻 CODESNACK",)
 
 with st.sidebar:
-    st.header("🔧 Customize Your Content")
-    template_type = st.selectbox("Select Content Type:", ["Lesson Plan", "Study Guide", "Group Activity", "Quiz Answer Sheet", "Topic Summary"])
-    topic = st.text_input("Software Dev Topic:", "Variables in Python")
+    st.header("🔧 Start Learning")
+    template_type = st.selectbox("Select Content Type:", ["Lesson Plan", "Try it yourself", "Tutorials", "Quiz Answer Sheet", "Topic Summary"])
+    topic = st.text_input("Software Dev Topic:", "")
     learner_level = st.selectbox("Learning Level:", ["Beginner", "Intermediate", "Advanced"])
-    context = st.text_area("Add Context (Optional):", "Teach rural youth with no programming experience.")
-    temperature = st.slider("Creativity (Temperature):", 0.0, 1.0, 0.7)
+    context = st.text_area("Add Context (Optional):", "")
+   
     generate_btn = st.button("🚀 Generate Content")
 
 if generate_btn:
     prompt = get_prompt_template(template_type, topic, learner_level, context)
-    st.subheader("📋 Prompt Preview")
+    st.subheader("")
     st.code(prompt, language='markdown')
 
-    with st.spinner("Generating content..."):
-        result = generate_content(prompt, temperature)
+    with st.spinner(""):
+        result = generate_content(prompt)
 
     if 'error' in result:
         st.error(f"❌ Error: {result['error']}")
     else:
-        st.success("✅ Content generated successfully!")
-        st.subheader("📄 Generated Output")
+        st.success("")
+        st.subheader("")
         st.text_area("Output:", result['output'], height=300)
 
-        st.markdown("### ⏱️ Performance")
-        st.write(f"Generation Time: {result['generation_time']} seconds")
+        st.markdown("")
+        st.write("")
 
         
 
@@ -77,22 +79,22 @@ if generate_btn:
 
 # --- Custom Prompt Feature ---
 st.markdown("---")
-st.header("✍️ Write Your Own Custom Prompt")
+st.header("✍️ Start Typing")
 
-custom_prompt = st.text_area("Enter your own AI prompt below (e.g., 'Explain loops in Python for kids with no coding background'):")
+custom_prompt = st.text_area("")
 
-if st.button("✨ Generate from Custom Prompt"):
+if st.button("✨ Start Generating"):
     if custom_prompt.strip() == "":
         st.warning("Please enter a valid prompt before generating.")
     else:
         with st.spinner("Generating custom response..."):
-            custom_result = generate_content(custom_prompt, temperature)
+            custom_result = generate_content(custom_prompt)
 
         if 'error' in custom_result:
             st.error(f"❌ Error: {custom_result['error']}")
         else:
             st.success("✅ Custom content generated successfully!")
-            st.text_area("Custom Output:", custom_result['output'], height=300)
+            st.text_area("Custom Output:", custom_result['output'], height=100)
             st.json({
                 "Generation Time (s)": custom_result['generation_time'],
                 "Prompt Tokens": custom_result['token_usage']['prompt_tokens'],

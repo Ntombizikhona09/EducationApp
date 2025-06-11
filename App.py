@@ -107,7 +107,7 @@ def get_prompt_template(template_type, topic, learner_level, context):
     elif template_type == "Study Guide":
         base_prompt = f"Generate a study guide summarizing the key points of '{topic}' for {learner_level} students studying software development. Include bullet points and 5 quiz questions. Context: {context}"
     elif template_type == "Tutorials":
-        base_prompt =  f"Find a tutorial video url  on YouTube that matches the topic '{topic}'for students. Based on the user's preferences and context, provide the video title, URL, and a thumbnail image for each recommended tutorial.Context: {context}"
+        base_prompt =  f"Design a group-based hands-on activity to teach the topic '{topic}' to {learner_level} learners. Ensure it's engaging and collaborative. Context: {context}"
     elif template_type == "Quiz Answer Sheet":
         base_prompt = f"Provide an answer sheet for a 5-question quiz on the topic '{topic}' in software development. Context: {context}"
     elif template_type == "Topic Summary":
@@ -123,27 +123,42 @@ def get_prompt_template(template_type, topic, learner_level, context):
 st.set_page_config(page_title="CodeSnack", page_icon="favicon.ico", layout="centered")
 st.image("codesnack.png")
 
+# Global variable to store performance data
+if 'performance_data' not in st.session_state:
+    st.session_state.performance_data = {}
+    
 # Practice Arena toggle
 show_practice_arena = st.sidebar.checkbox("🧪 Practice Arena")
 
 # Sidebar Input
 with st.sidebar:
-    st.header("🔧 Start Learning")
+    st.header("🧠 Start Learning")
     template_type = st.selectbox("Select Content Type:", ["Lesson Plan", "Try it yourself", "Tutorials", "Quiz Answer Sheet", "Topic Summary"])
     topic = st.text_input("Software Dev Topic:", "")
     learner_level = st.selectbox("Learning Level:", ["Beginner", "Intermediate", "Advanced"])
     context = st.text_area("Add Context (Optional):", "")
    
     generate_btn = st.button("🚀 Generate Content")
+    evaluate_btn = st.button("📊 Evaluate Performance")
+
 # Content Generation Section
 if generate_btn:
     prompt = get_prompt_template(template_type, topic, learner_level, context)
     st.subheader("Prompt Sent to Gemini:")
+    st.subheader("Request sent:")
     st.code(prompt, language='markdown')
 
     with st.spinner("Generating content..."):
+        start_time = time.time()
         result = generate_content(prompt)
+        end_time = time.time()
+        elapsed_time = round(end_time - start_time, 2)
 
+        # Store performance
+        st.session_state.performance_data = {
+            "response_time": elapsed_time,
+            "content_length": len(result['output']) if 'output' in result else 0
+        }
     if 'error' in result:
         st.error(f"❌ Error: {result['error']}")
     else:
@@ -162,23 +177,55 @@ if generate_btn:
          
         st.download_button("📥 Download Output", data=pdf_buffer, file_name=f"{template_type}_{topic}.pdf", mime="application/pdf")
 
-# --- Custom Prompt Feature ---
-st.markdown("---")
-st.header("✍️ Start Typing")
 
-custom_prompt = st.text_area("Custom Prompt")
-
-if st.button("✨ Start Generating"):
-    if custom_prompt.strip() == "":
-        st.warning("Please enter a valid prompt before generating.")
+# Evaluate Performance
+if evaluate_btn:
+    if st.session_state.performance_data:
+        st.sidebar.markdown("### 📈 Performance Report")
+        st.sidebar.write(f"🕒 Response Time: `{st.session_state.performance_data['response_time']}s`")
+        st.sidebar.write(f"📝 Output Length: `{st.session_state.performance_data['content_length']} characters`")
     else:
-        with st.spinner("Generating custom response..."):
-            custom_result = generate_content(custom_prompt)
+        st.sidebar.warning("⚠️ No performance data yet. Generate content first.")
 
-        if 'error' in custom_result:
-            st.error(f"❌ Error: {custom_result['error']}")
+# --- Custom Prompt Feature ---
+st.header("✍️ What would you like to ask?")
+# Initialize session state for the custom prompt if it doesn't exist
+if "custom_prompt" not in st.session_state:
+    st.session_state.custom_prompt = ""
+
+# Text input for the prompt
+custom_prompt = st.text_area("", value=st.session_state.custom_prompt)
+st.session_state.custom_prompt = custom_prompt  # Sync session state with user input
+# New Prompt button clears everything
+
+col1, spacer, col2 = st.columns([1, 0.96, 1])
+
+with col2:
+    if st.button("🔄 Clear"):
+        st.session_state.custom_prompt = ""  # Clear the prompt
+        st.rerun()
+              # Rerun the app to clear outputs
+# Start Generating button
+with col1:
+    if st.button("✨ Start Generating"):
+        if custom_prompt.strip() == "":
+            st.warning("Please enter a valid prompt before generating.")
         else:
-            st.success("✅ Custom content generated successfully!")
+            with st.spinner("Generating custom response..."):
+                custom_result = generate_content(custom_prompt)
+             
+            if 'error' in custom_result:
+                st.error(f"❌ Error: {custom_result['error']}")
+            else:
+                st.success("✅ Custom content generated successfully!")
+                st.text_area("Custom Output:", custom_result['output'], height=150)
+                st.json({
+                    "Generation Time (s)": custom_result['generation_time'],
+                    "Prompt Tokens": custom_result['token_usage']['prompt_tokens'],
+                    "Completion Tokens": custom_result['token_usage']['completion_tokens'],
+                    "Total Tokens": custom_result['token_usage']['total_tokens']
+                })
+                st.download_button("📥 Download Custom Output", custom_result['output'], file_name="custom_prompt_output.txt")
             
             #Remove the custome result asterisk
             remove_custom_result_asterisk = remove_all_asterisks(custom_result['output'])
@@ -259,7 +306,7 @@ if show_practice_arena:
 
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("▶️ Run Code"):
+        if st.button("▶️ Run Code", key="run_code_button"):
             styled_html = f"""
             <div style="background-color:white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
                 {user_code}

@@ -5,7 +5,6 @@ import os
 import re
 import google.generativeai as genai
 from dotenv import load_dotenv
-import replicate
 
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -17,18 +16,6 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-def replicate_copilot(code_snippet: str) -> str:
-    model = "meta/codellama-70b-instruct:a279116fe47a0f65701a8817188601e2fe8f4b9e04a518789655ea7b995851bf"
-    output = replicate.run(
-        model,
-        input={
-            "prompt": f"Explain and improve this HTML/CSS/JS code, beginner‑friendly:\n{code_snippet}",
-            "temperature": 0.7,
-            "max_length": 512
-        },
-        token=os.getenv("REPLICATE_API_TOKEN")
-    )
-    return output[0] if isinstance(output, list) else output
 
 
 def generate_content(prompt, temperature=0.7):
@@ -268,7 +255,6 @@ if show_practice_arena:
   </body>
 </html>
 """
-
     user_code = st.text_area("✍️ Edit Your Code Below", starter_code, height=300)
 
     col1, col2 = st.columns(2)
@@ -282,11 +268,14 @@ if show_practice_arena:
             st.components.v1.html(styled_html, height=400, scrolling=True)
 
     with col2:
-        if st.button("🤖 Get Help from Replicate Copilot"):
-            with st.spinner("Sending code to Replicate model..."):
-                try:
-                    explanation = replicate_copilot(user_code)
-                    st.success("✅ Copilot Response:")
-                    st.text_area("🔍 Explanation & Suggestions", explanation, height=300)
-                except Exception as e:
-                    st.error(f"❌ Error from Replicate: {str(e)}")
+        if st.button("🤖 Get Help from Gemini Copilot"):
+            with st.spinner("Sending code to Gemini..."):
+                gemini_prompt = f"Explain and improve the following HTML/CSS/JavaScript code for a beginner:\n\n{user_code}"
+                gemini_result = generate_content(gemini_prompt)
+
+                if 'error' in gemini_result:
+                    st.error(f"❌ Gemini Error: {gemini_result['error']}")
+                else:
+                    st.success("✅ Gemini Response:")
+                    st.text_area("🔍 Explanation & Suggestions", gemini_result['output'], height=300)
+

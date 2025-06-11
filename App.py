@@ -20,9 +20,23 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 def generate_content(prompt, temperature=0.7):
     start_time = time.time()
+
     try:
+        # Step 1: Check if the prompt is programming-related using Gemini
+        classifier_model = genai.GenerativeModel('gemini-1.5-flash')
+        classifier_prompt = f"Is the following topic related to programming or software development? Answer only 'yes' or 'no'. Topic: {prompt}"
+        classifier_response = classifier_model.generate_content(classifier_prompt).text.strip().lower()
+
+        # Only allow exact match
+        if classifier_response != "yes":
+            return {
+                'error': f"🚫 This topic does not appear to be related to programming or software development. Gemini said: {classifier_response}"
+            }
+
+        # Step 2: If valid, generate the actual content
         model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt, generation_config={"temperature": temperature})
+
         end_time = time.time()
         return {
             'output': response.text,
@@ -33,8 +47,10 @@ def generate_content(prompt, temperature=0.7):
                 'total_tokens': "N/A"
             }
         }
+
     except Exception as e:
         return {'error': str(e)}
+
     
 #Function | Remove the asterisk
 def remove_all_asterisks(text):

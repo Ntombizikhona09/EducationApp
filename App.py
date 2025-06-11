@@ -119,54 +119,54 @@ def get_prompt_template(template_type, topic, learner_level, context):
         base_prompt = f"Create a comprehensive 1-hour lesson plan on '{topic}' for {learner_level} youth learning software development. Include learning objectives, materials needed, and step-by-step teaching activities. Context: {context}"
     elif template_type == "Study Guide":
         base_prompt = f"Generate a study guide summarizing the key points of '{topic}' for {learner_level} students studying software development. Include bullet points and 5 quiz questions. Context: {context}"
-    elif template_type == "Group Activity":
+    elif template_type == "Tutorials":
         base_prompt =  f"Design a group-based hands-on activity to teach the topic '{topic}' to {learner_level} learners. Ensure it's engaging and collaborative. Context: {context}"
     elif template_type == "Quiz Answer Sheet":
         base_prompt = f"Provide an answer sheet for a 5-question quiz on the topic '{topic}' in software development. Context: {context}"
     elif template_type == "Topic Summary":
         base_prompt = f"Summarize the topic '{topic}' in simple terms for {learner_level} students beginning their software development journey. Context: {context}"
-        
+    elif template_type == "Try it yourself":
+        base_prompt == f"Generate a hands-on practice exercise for learners on the topic '{topic}' in software development. The activity should include a description, starter code, and instructions to complete the task. Target Level: {learner_level}. Context: {context}"
+           
     #instructions to add emojis that's relevant where needed
     base_prompt += "\n\nMake sure to add relevant emojis next to important points or headings instead of using bold formatting. If there are lists, use either unordered lists (bullets) or ordered lists (numbers) — do not use asterisks (*) for lists. Ensure the text is presented cleanly and neatly."
     return base_prompt
 
 # --- Streamlit UI ---
-st.set_page_config(page_title="Software Dev Content Generator", page_icon="favicon.ico", layout="centered")
-st.title("💻 Custom Content Generator for Youth in Software Development")
+st.set_page_config(page_title="CodeSnack", page_icon="favicon.ico", layout="centered")
+st.title("💻 CODESNACK")
 
 # Practice Arena toggle
 show_practice_arena = st.sidebar.checkbox("🧪 Practice Arena")
 
+# Sidebar Input
 with st.sidebar:
-    st.header("🔧 Customize Your Content")
-    template_type = st.selectbox("Select Content Type:", ["Lesson Plan", "Study Guide", "Group Activity", "Quiz Answer Sheet", "Topic Summary"])
-    topic = st.text_input("Software Dev Topic:", "Variables in Python")
+    st.header("🔧 Start Learning")
+    template_type = st.selectbox("Select Content Type:", ["Lesson Plan", "Try it yourself", "Tutorials", "Quiz Answer Sheet", "Topic Summary"])
+    topic = st.text_input("Software Dev Topic:", "")
     learner_level = st.selectbox("Learning Level:", ["Beginner", "Intermediate", "Advanced"])
-    context = st.text_area("Add Context (Optional):", "Teach rural youth with no programming experience.")
-    temperature = st.slider("Creativity (Temperature):", 0.0, 1.0, 0.7)
+    context = st.text_area("Add Context (Optional):", "")
+   
     generate_btn = st.button("🚀 Generate Content")
-
+# Content Generation Section
 if generate_btn:
     prompt = get_prompt_template(template_type, topic, learner_level, context)
-    st.subheader("📋 Prompt Preview")
+    st.subheader("Prompt Sent to Gemini:")
     st.code(prompt, language='markdown')
 
     with st.spinner("Generating content..."):
-        result = generate_content(prompt, temperature)
+        result = generate_content(prompt)
 
     if 'error' in result:
         st.error(f"❌ Error: {result['error']}")
     else:
         st.success("✅ Content generated successfully!")
-        st.subheader("📄 Generated Output")
+        st.subheader("Output:")
         
         #removing the asterisk from the result
         remove_asterisk_from_result = remove_all_asterisks(result['output'])
-        st.text_area("Output:", remove_asterisk_from_result, height=300)
-
-        st.markdown("### ⏱️ Performance")
-        st.write(f"Generation Time: {result['generation_time']} seconds")
-
+        st.text_area("Generated Output:", remove_asterisk_from_result, height=300)
+        
         #replace asterisk with nothing
         remove_asterisk_from_result_file = remove_all_asterisks(result['output']) 
         
@@ -177,16 +177,16 @@ if generate_btn:
 
 # --- Custom Prompt Feature ---
 st.markdown("---")
-st.header("✍️ Write Your Own Custom Prompt")
+st.header("✍️ Start Typing")
 
-custom_prompt = st.text_area("Enter your own AI prompt below (e.g., 'Explain loops in Python for kids with no coding background'):")
+custom_prompt = st.text_area("Custom Prompt")
 
-if st.button("✨ Generate from Custom Prompt"):
+if st.button("✨ Start Generating"):
     if custom_prompt.strip() == "":
         st.warning("Please enter a valid prompt before generating.")
     else:
         with st.spinner("Generating custom response..."):
-            custom_result = generate_content(custom_prompt, temperature)
+            custom_result = generate_content(custom_prompt)
 
         if 'error' in custom_result:
             st.error(f"❌ Error: {custom_result['error']}")

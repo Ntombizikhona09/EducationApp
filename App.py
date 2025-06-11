@@ -120,7 +120,7 @@ def get_prompt_template(template_type, topic, learner_level, context):
     elif template_type == "Study Guide":
         base_prompt = f"Generate a study guide summarizing the key points of '{topic}' for {learner_level} students studying software development. Include bullet points and 5 quiz questions. Context: {context}"
     elif template_type == "Tutorials":
-        base_prompt =  f"Design a group-based hands-on activity to teach the topic '{topic}' to {learner_level} learners. Ensure it's engaging and collaborative. Context: {context}"
+        base_prompt =  f"Find a tutorial video url  on YouTube that matches the topic '{topic}'for students. Based on the user's preferences and context, provide the video title, URL, and a thumbnail image for each recommended tutorial.Context: {context}"
     elif template_type == "Quiz Answer Sheet":
         base_prompt = f"Provide an answer sheet for a 5-question quiz on the topic '{topic}' in software development. Context: {context}"
     elif template_type == "Topic Summary":
@@ -134,7 +134,7 @@ def get_prompt_template(template_type, topic, learner_level, context):
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="CodeSnack", page_icon="favicon.ico", layout="centered")
-st.title("💻 CODESNACK")
+st.image("codesnack.png")
 
 # Practice Arena toggle
 show_practice_arena = st.sidebar.checkbox("🧪 Practice Arena")

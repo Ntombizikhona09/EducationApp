@@ -225,7 +225,21 @@ if generate_btn:
             st.subheader("Output:")
 
             clean_output = remove_all_asterisks(result['output'])
-            st.text_area("Generated Output:", clean_output, height=300)
+            st.markdown(f"""
+    <div style='
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        width: 100%;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        font-family: "Segoe UI", sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+    '>
+        {clean_output.replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br>')}
+    </div>
+""", unsafe_allow_html=True)
 
             pdf_buffer = text_to_pdf(clean_output, f"{template_type}_{topic}.pdf")
             st.download_button("📥 Download Output", data=pdf_buffer, file_name=f"{template_type}_{topic}.pdf", mime="application/pdf")
@@ -248,48 +262,83 @@ if "custom_prompt" not in st.session_state:
     st.session_state.custom_prompt = ""
 
 # Text input for the prompt
-custom_prompt = st.text_area("Enter Custom Prompt:", value=st.session_state.custom_prompt)
+custom_prompt = st.text_area("", value=st.session_state.custom_prompt)
 st.session_state.custom_prompt = custom_prompt  # Sync session state with user input
 # New Prompt button clears everything
 
+# Initialize session state variables
+if "user_prompt" not in st.session_state:
+    st.session_state.user_prompt = ""
+if "output" not in st.session_state:
+    st.session_state.output = ""
+
+# Button layout
 col1, spacer, col2 = st.columns([1, 0.96, 1])
 
-with col2:
-    if st.button("🔄 Clear"):
-        st.session_state.custom_prompt = ""  # Clear the prompt
-        st.rerun()
-              # Rerun the app to clear outputs
-# Start Generating button
+# Buttons
 with col1:
-    if st.button("✨ Start Generating"):
-        if custom_prompt.strip() == "":
-            st.warning("Please enter a valid prompt before generating.")
+    generate_clicked = st.button("✨ Start Generating")
+with col2:
+    clear_clicked = st.button("🔄 Clear", key="clear_button")
+
+
+# Display output
+if st.session_state.output:
+    st.write(st.session_state.output)
+
+# Clear action
+if clear_clicked:
+    st.session_state.user_prompt = ""
+    st.session_state.output = ""
+    st.rerun()
+
+# Generate action (outside columns = full width output)
+if generate_clicked:
+    if custom_prompt.strip() == "":
+        st.warning("Please enter a valid prompt before generating.")
+    else:
+        with st.spinner("Generating custom response..."):
+            custom_result = generate_content(custom_prompt)
+
+        if 'error' in custom_result:
+            st.error(f"❌ Error: {custom_result['error']}")
         else:
-            with st.spinner("Generating custom response..."):
-                custom_result = generate_content(custom_prompt)
-             
-            if 'error' in custom_result:
-                st.error(f"❌ Error: {custom_result['error']}")
-            else:
-                st.success("✅ Custom content generated successfully!")
-                st.text_area("Custom Output:", custom_result['output'], height=150)
-                st.json({
-                    "Generation Time (s)": custom_result['generation_time'],
-                    "Prompt Tokens": custom_result['token_usage']['prompt_tokens'],
-                    "Completion Tokens": custom_result['token_usage']['completion_tokens'],
-                    "Total Tokens": custom_result['token_usage']['total_tokens']
-                })
-                st.download_button("📥 Download Custom Output", custom_result['output'], file_name="custom_prompt_output.txt")
-            
-            #Remove the custom result asterisk
-            remove_custom_result_asterisk = remove_all_asterisks(custom_result['output'])
-            st.text_area("Custom Output:", custom_result['output'], height=300)
+            st.success("✅ Custom content generated successfully!")
+            st.markdown("### Custom Output:")
+
+            # Sanitize and format output
+            clean_custom_output = remove_all_asterisks(custom_result['output'])
+            styled_output = clean_custom_output.replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br>')
+            st.markdown(
+                f"""
+                <div style="
+                    background-color: #f0f2f6;
+                    padding: 16px;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    white-space: pre-wrap;
+                    width: 100%;
+                    overflow-x: auto;
+                ">
+                    {styled_output}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # Show performance data
             st.json({
                 "Generation Time (s)": custom_result['generation_time'],
                 "Prompt Tokens": custom_result['token_usage']['prompt_tokens'],
                 "Completion Tokens": custom_result['token_usage']['completion_tokens'],
                 "Total Tokens": custom_result['token_usage']['total_tokens']
             })
+
+            # Allow download
+          
+
+         
             
             #replace asterisk with nothing
             remove_asterisk_from_file = remove_all_asterisks(custom_result['output'])
